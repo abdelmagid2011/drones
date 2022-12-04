@@ -42,4 +42,6 @@ public interface DroneService {
 
 	public StateDto droneBack(String serial) throws InvalidDroneStateException;
 
+	public void checkBattaryLevels();
+
 }

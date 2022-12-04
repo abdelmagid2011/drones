@@ -10,6 +10,7 @@ import org.springframework.stereotype.Service;
 
 import com.example.drones.dto.BattaryLevelDto;
 import com.example.drones.dto.StateDto;
+import com.example.drones.enm.AuditLogAction;
 import com.example.drones.enm.DroneState;
 import com.example.drones.exceptions.DroneInvalidCreationParamsException;
 import com.example.drones.exceptions.InvalidDroneStateException;
@@ -27,6 +28,9 @@ public class DroneServiceImpl implements DroneService {
 	@Autowired
 	private DroneRepository droneRepo;
 	
+	@Autowired
+	private AuditLogService auditLogService;
+	
 	@Override
 	public Iterable<Drone> findAll() {
 		return droneRepo.findAll();
@@ -42,7 +46,9 @@ public class DroneServiceImpl implements DroneService {
 		if(drone.getId() != null)
 			throw new DroneInvalidCreationParamsException();
 		try {
-			return droneRepo.save(drone);
+			drone = droneRepo.save(drone);
+			auditLogService.addAuditLog(AuditLogAction.SaveDrone, drone.getId(), Drone.class.getName(), drone);
+			return drone;
 		}catch (Exception e) {
 			throw new DroneInvalidCreationParamsException();
 		}
@@ -55,7 +61,9 @@ public class DroneServiceImpl implements DroneService {
 		try {
 			// set default creation state
 			drone.setState(DroneState.IDLE);
-			return droneRepo.save(drone);
+			drone = droneRepo.save(drone);
+			auditLogService.addAuditLog(AuditLogAction.CreateDrone, drone.getId(), Drone.class.getName(), drone);
+			return drone;
 		}catch (Exception e) {
 			throw new DroneInvalidCreationParamsException();
 		}
@@ -84,6 +92,7 @@ public class DroneServiceImpl implements DroneService {
 				drone.getItems().addAll(loadedItems);
 			
 			droneRepo.save(drone);
+			auditLogService.addAuditLog(AuditLogAction.loadDrone, drone.getId(), Drone.class.getName(), loadedItems);
 		}else {
 			throw new InvalidDroneStateException();
 		}
@@ -142,6 +151,7 @@ public class DroneServiceImpl implements DroneService {
 			if(removeItems)
 				drone.getItems().clear();
 			droneRepo.save(drone);
+			auditLogService.addAuditLog(AuditLogAction.StateChange, drone.getId(), Drone.class.getName(), Arrays.asList(oldState, newState, removeItems));
 		}
 		return new StateDto(drone.getState().toString());
 	}
@@ -159,5 +169,13 @@ public class DroneServiceImpl implements DroneService {
 	@Override
 	public StateDto droneBack(String serial) throws InvalidDroneStateException {
 		return updateDroneState(serial, DroneState.DELIVERED, DroneState.IDLE, false);
+	}
+
+	@Override
+	public void checkBattaryLevels() {
+		Iterable<Drone> drones = droneRepo.findAll();
+		for (Drone drone : drones) {
+			auditLogService.addAuditLog(AuditLogAction.BattaryCheck, drone.getId(), Drone.class.getName(), NumberFormat.getPercentInstance().format(drone.getBattaryCapacity()));
+		}
 	}
 }

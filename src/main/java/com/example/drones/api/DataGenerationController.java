@@ -10,7 +10,6 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.example.drones.enm.DroneModel;
-import com.example.drones.enm.DroneState;
 import com.example.drones.persistence.model.Drone;
 
 @RestController

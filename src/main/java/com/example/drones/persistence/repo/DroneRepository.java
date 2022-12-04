@@ -14,6 +14,6 @@ public interface DroneRepository  extends CrudRepository<Drone, Long>{
 
 	public List<Drone> findAllByState(DroneState state);
 
-	public List<Drone> findAllBybattaryCapacityGreaterThanEqualAndStateIn(float f, List<DroneState> statusList);
+	public List<Drone> findAllBybattaryCapacityGreaterThanEqualAndStateIn(Float battaryCapacity, List<DroneState> statusList);
 
 }
